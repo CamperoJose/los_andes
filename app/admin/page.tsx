@@ -16,6 +16,7 @@ import {
   UsersThree,
   X,
 } from "@phosphor-icons/react";
+import Analytics from "./analytics";
 
 type AdminUser = { usuario_id: string; usuario: string; nombres: string; apellidos: string; rol: string };
 type Job = {
@@ -27,6 +28,7 @@ type Application = {
   postulacion_id: string; oportunidad_id: string; cargo: string; estado: string; fecha_postulacion: string;
   observaciones: string; nombres: string; apellidos: string; email: string; telefono: string; ciudad: string;
   experiencia: string; educacion: string;
+  genero?: string; fecha_nacimiento?: string; puntaje_evaluacion?: number | string; test_risc?: string;
 };
 type Dashboard = {
   resumen: { cargos_total: number; cargos_abiertos: number; cargos_visibles: number; postulaciones_total: number; pendientes: number };
@@ -69,13 +71,12 @@ export default function AdminPage() {
     setLoading(true);
     setMessage("");
     try {
-      const [d, j, a] = await Promise.all([
-        fetch("/api/admin/dashboard", { cache: "no-store" }).then(r => r.json()),
+      const [j, a] = await Promise.all([
         fetch("/api/admin/oportunidades", { cache: "no-store" }).then(r => r.json()),
         fetch("/api/admin/postulaciones", { cache: "no-store" }).then(r => r.json()),
       ]);
-      if (!d.success || !j.success || !a.success) throw new Error(d.message || j.message || a.message || "No se pudo cargar la información");
-      setDashboard(d.data);
+      if (!j.success || !a.success) throw new Error(j.message || a.message || "No se pudo cargar la información");
+      setDashboard({resumen:{cargos_total:j.data.length,cargos_abiertos:j.data.filter((x:Job)=>x.estado==="ABIERTA"&&x.visible).length,cargos_visibles:0,postulaciones_total:a.data.length,pendientes:0},estados:{},por_cargo:[]});
       setJobs(j.data || []);
       setApplications(a.data || []);
     } catch (error) {
@@ -132,7 +133,7 @@ export default function AdminPage() {
 
         {message && <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{message}</div>}
 
-        {tab === "dashboard" && <DashboardView data={dashboard} />}
+        {tab === "dashboard" && <>{dashboard ? <Analytics applications={applications} jobs={jobs} /> : <AdminLoading compact />}</>}
         {tab === "cargos" && <JobsView jobs={jobs} onEdit={setEditingJob} onNew={() => setEditingJob({ ...emptyJob, orden: jobs.length + 1 })} onRefresh={loadAll} />}
         {tab === "postulaciones" && <ApplicationsView applications={filteredApplications} search={search} setSearch={setSearch} onRefresh={loadAll} />}
 
@@ -182,24 +183,6 @@ function Login({ onSuccess }: { onSuccess: (user: AdminUser) => void }) {
   );
 }
 
-function DashboardView({ data }: { data: Dashboard | null }) {
-  if (!data) return <AdminLoading compact />;
-  const cards = [
-    ["Postulaciones", data.resumen.postulaciones_total, "Total recibidas"],
-    ["Pendientes", data.resumen.pendientes, "Nuevas o en revisión"],
-    ["Cargos abiertos", data.resumen.cargos_abiertos, "Publicables ahora"],
-    ["Cargos totales", data.resumen.cargos_total, "Histórico de posiciones"],
-  ];
-  const max = Math.max(1, ...data.por_cargo.map(x => x.total));
-  return <section className="mt-6 space-y-6">
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{cards.map(([label,value,help]) => <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-2 text-3xl font-semibold">{value}</p><p className="mt-1 text-xs text-slate-400">{help}</p></div>)}</div>
-    <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div><h2 className="text-lg font-semibold">Postulaciones por cargo</h2><p className="mt-1 text-sm text-slate-500">Volumen relativo y avance por oportunidad.</p></div><div className="mt-6 space-y-5">{data.por_cargo.length === 0 ? <Empty text="Aún no hay postulaciones registradas."/> : data.por_cargo.map(item => <div key={item.oportunidad_id}><div className="flex items-center justify-between gap-4"><div><p className="font-medium">{item.cargo}</p><p className="text-xs text-slate-500">{item.nueva} nuevas · {item.entrevista} entrevista · {item.finalista} finalista</p></div><span className="text-sm font-semibold">{item.total}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#3157c8]" style={{ width: `${Math.max(6, item.total / max * 100)}%` }} /></div></div>)}</div></div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-lg font-semibold">Pipeline</h2><p className="mt-1 text-sm text-slate-500">Distribución por estado.</p><div className="mt-5 space-y-3">{Object.entries(data.estados).length === 0 ? <Empty text="Sin actividad todavía."/> : Object.entries(data.estados).sort((a,b)=>b[1]-a[1]).map(([state,count]) => <div key={state} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5"><span className="text-sm">{state}</span><span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold shadow-sm">{count}</span></div>)}</div></div>
-    </div>
-  </section>;
-}
-
 function JobsView({ jobs, onEdit, onNew, onRefresh }: { jobs: Job[]; onEdit: (job: Job) => void; onNew: () => void; onRefresh: () => Promise<void> }) {
   async function remove(job: Job) {
     if (!confirm(`¿Dar de baja “${job.titulo}”? Se conservará su historial y dejará de publicarse.`)) return;
@@ -234,9 +217,9 @@ function JobModal({ job, onClose, onSaved }: { job: Job; onClose:()=>void; onSav
 }
 
 function ApplicationDrawer({application,onClose,onSaved}:{application:Application;onClose:()=>void;onSaved:()=>Promise<void>}){
-  const [estado,setEstado]=useState(application.estado||"NUEVA");const[obs,setObs]=useState(application.observaciones||"");const[saving,setSaving]=useState(false);
-  async function save(){setSaving(true);try{const r=await fetch("/api/admin/postulaciones",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({postulacion_id:application.postulacion_id,estado,observaciones:obs})});const data=await r.json();if(!data.success)throw new Error(data.message||"No se pudo actualizar");await onSaved();}catch(error){alert(error instanceof Error?error.message:"No se pudo actualizar");}finally{setSaving(false);}}
-  return <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 backdrop-blur-sm"><aside className="h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Perfil del candidato</p><h3 className="mt-1 text-2xl font-semibold">{application.nombres} {application.apellidos}</h3><p className="mt-1 text-sm text-slate-500">{application.cargo}</p></div><button onClick={onClose} className="rounded-xl p-2 hover:bg-slate-100"><X size={21}/></button></div><div className="mt-7 grid gap-3 sm:grid-cols-2"><Info label="Email" value={application.email}/><Info label="Teléfono" value={application.telefono||"—"}/><Info label="Ciudad" value={application.ciudad||"—"}/><Info label="Fecha" value={String(application.fecha_postulacion||"").replace("T"," ").slice(0,16)}/></div><div className="mt-6 space-y-5"><ReadBox title="Experiencia" text={application.experiencia||"Sin detalle"}/><ReadBox title="Educación" text={application.educacion||"Sin detalle"}/><div><label className="mb-2 block text-sm font-semibold">Estado del proceso</label><select value={estado} onChange={e=>setEstado(e.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm">{states.map(s=><option key={s}>{s}</option>)}</select></div><TextArea label="Observaciones internas" value={obs} onChange={setObs} rows={4}/><button onClick={()=>void save()} disabled={saving} className="w-full rounded-xl bg-[#101a34] px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-50">{saving?"Guardando...":"Guardar seguimiento"}</button></div></aside></div>;
+  const [estado,setEstado]=useState(application.estado||"NUEVA");const[obs,setObs]=useState(application.observaciones||"");const[score,setScore]=useState(String(application.puntaje_evaluacion??""));const[risc,setRisc]=useState(application.test_risc||"");const[saving,setSaving]=useState(false);
+  async function save(){setSaving(true);try{const r=await fetch("/api/admin/postulaciones",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({postulacion_id:application.postulacion_id,estado,observaciones:obs,puntaje_evaluacion:score,test_risc:risc})});const data=await r.json();if(!data.success)throw new Error(data.message||"No se pudo actualizar");await onSaved();}catch(error){alert(error instanceof Error?error.message:"No se pudo actualizar");}finally{setSaving(false);}}
+  return <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 backdrop-blur-sm"><aside className="h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Perfil del candidato</p><h3 className="mt-1 text-2xl font-semibold">{application.nombres} {application.apellidos}</h3><p className="mt-1 text-sm text-slate-500">{application.cargo}</p></div><button onClick={onClose} className="rounded-xl p-2 hover:bg-slate-100"><X size={21}/></button></div><div className="mt-7 grid gap-3 sm:grid-cols-2"><Info label="Email" value={application.email}/><Info label="Teléfono" value={application.telefono||"—"}/><Info label="Ciudad" value={application.ciudad||"—"}/><Info label="Género" value={application.genero||"Sin dato"}/><Info label="Nacimiento" value={application.fecha_nacimiento||"Sin dato"}/><Info label="Fecha" value={String(application.fecha_postulacion||"").replace("T"," ").slice(0,16)}/></div><div className="mt-6 space-y-5"><ReadBox title="Experiencia" text={application.experiencia||"Sin detalle"}/><ReadBox title="Educación" text={application.educacion||"Sin detalle"}/><div><label className="mb-2 block text-sm font-semibold">Estado del proceso</label><select value={estado} onChange={e=>setEstado(e.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm">{states.map(s=><option key={s}>{s}</option>)}</select></div><div className="grid gap-3 sm:grid-cols-2"><AdminField label="Puntaje (0 a 100)" type="number" value={score} onChange={setScore}/><AdminField label="Resultado test RISC" value={risc} onChange={setRisc}/></div><TextArea label="Observaciones internas" value={obs} onChange={setObs} rows={4}/><button onClick={()=>void save()} disabled={saving} className="w-full rounded-xl bg-[#101a34] px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-50">{saving?"Guardando...":"Guardar seguimiento"}</button></div></aside></div>;
 }
 
 function TabButton({active,onClick,icon,label}:{active:boolean;onClick:()=>void;icon:ReactNode;label:string}){return <button onClick={onClick} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition ${active?"bg-[#101a34] text-white shadow":"text-slate-600 hover:bg-slate-50"}`}>{icon}{label}</button>}

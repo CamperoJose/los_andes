@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function POST(request: NextRequest) {
   const url = process.env.APPS_SCRIPT_URL;
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({ action: "postular", apiKey, ...body }),
     });
     const data = await response.json();
+    if (data.success) { revalidateTag("admin_postulaciones"); revalidateTag("admin_dashboard"); }
     return NextResponse.json(data, { status: data.success ? 200 : 400 });
   } catch {
     return NextResponse.json({ success: false, message: "No se pudo registrar la postulación" }, { status: 502 });

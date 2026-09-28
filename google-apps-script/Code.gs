@@ -1,4 +1,4 @@
-const SPREADSHEET_ID = '1ihhddc0F-Wv7wuBOyzNkgLT_EOGoQVEjAtUWW4x8YXE';
+const SPREADSHEET_ID = '1QrrRaTMapWgsK_0LbaSdAr79BfhN9DD7ot5mi7gHhJ4';
 const CACHE_TTL_PUBLIC = 120;
 const CACHE_TTL_ADMIN = 45;
 let spreadsheetCache_ = null;
@@ -90,9 +90,9 @@ function listarOportunidadesAdmin_() {
 function loginAdmin_(data) {
   const usuario = clean_(data.usuario).toLowerCase(); const contrasena = String(data.contrasena || '');
   if (!usuario || !contrasena) return json({ success:false, message:'Completa usuario y contraseña' });
-  const found = rowsAsObjects_('usuarios').find(user => String(user.usuario || '').trim().toLowerCase() === usuario && String(user.contrasena || '') === contrasena && bool_(user.activo) && String(user.rol || '').trim().toUpperCase() === 'ADMIN');
-  if (!found) return json({ success:false, message:'Usuario o contraseña incorrectos' });
-  return json({ success:true, user:{ usuario_id:found.usuario_id, usuario:found.usuario, nombres:found.nombres, apellidos:found.apellidos, rol:'ADMIN' } });
+  const props = PropertiesService.getScriptProperties();
+  if (usuario !== String(props.getProperty('ADMIN_USER') || '').toLowerCase() || contrasena !== props.getProperty('ADMIN_PASSWORD')) return json({success:false,message:'Usuario o contraseña incorrectos'});
+  return json({success:true,user:{usuario_id:'ADMIN',usuario,nombres:'Equipo',apellidos:'RR. HH.',rol:'ADMIN'}});
 }
 
 function guardarOportunidad_(data) {
@@ -117,8 +117,8 @@ function registrarPostulacion_(data) {
   const oportunidad=rowsAsObjects_('oportunidades').find(item=>String(item.oportunidad_id)===String(data.oportunidad_id)); if(!oportunidad||!esPublicable_(oportunidad))throw new Error('La oportunidad ya no está disponible');
   const email=clean_(data.email).toLowerCase(); if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Correo electrónico inválido');
   const lock=LockService.getScriptLock(); lock.waitLock(5000); try { const postulanteId=Utilities.getUuid(), postulacionId=Utilities.getUuid(), now=new Date();
-    sheet_('postulantes').appendRow([postulanteId,clean_(data.nombres),clean_(data.apellidos),email,clean_(data.telefono),clean_(data.ciudad),now]);
-    sheet_('postulaciones').appendRow([postulacionId,postulanteId,data.oportunidad_id,'NUEVA',now,'','']);
+    sheet_('postulantes').appendRow([postulanteId,clean_(data.nombres),clean_(data.apellidos),email,clean_(data.telefono),clean_(data.ciudad),now,clean_(data.genero),clean_(data.fecha_nacimiento)]);
+    sheet_('postulaciones').appendRow([postulacionId,postulanteId,data.oportunidad_id,'NUEVA',now,'','','','']);
     sheet_('experiencias').appendRow([Utilities.getUuid(),postulanteId,'','','','',false,clean_(data.experiencia)]);
     if(clean_(data.educacion))sheet_('educaciones').appendRow([Utilities.getUuid(),postulanteId,'','','','','',clean_(data.educacion)]);
     invalidateReadCaches_(); return json({success:true,postulacion_id:postulacionId,message:'Postulación registrada correctamente'});
@@ -131,14 +131,17 @@ function listarPostulacionesAdmin_() {
   const postulantes=rowsAsObjects_('postulantes'), postulaciones=rowsAsObjects_('postulaciones'), oportunidades=rowsAsObjects_('oportunidades');
   const postulanteMap=Object.fromEntries(postulantes.map(item=>[String(item.postulante_id),item])), oportunidadMap=Object.fromEntries(oportunidades.map(item=>[String(item.oportunidad_id),item]));
   const experienciaMap=groupDescriptions_(rowsAsObjects_('experiencias')), educacionMap=groupDescriptions_(rowsAsObjects_('educaciones'));
-  const data=postulaciones.map(postulacion=>{const pid=String(postulacion.postulante_id),p=postulanteMap[pid]||{},o=oportunidadMap[String(postulacion.oportunidad_id)]||{};return {...postulacion,nombres:p.nombres||'',apellidos:p.apellidos||'',email:p.email||'',telefono:p.telefono||'',ciudad:p.ciudad||'',cargo:o.titulo||postulacion.oportunidad_id,experiencia:(experienciaMap[pid]||[]).join('\n'),educacion:(educacionMap[pid]||[]).join('\n')};}).sort((a,b)=>String(b.fecha_postulacion||'').localeCompare(String(a.fecha_postulacion||'')));
+  const data=postulaciones.map(postulacion=>{const pid=String(postulacion.postulante_id),p=postulanteMap[pid]||{},o=oportunidadMap[String(postulacion.oportunidad_id)]||{};return {...postulacion,nombres:p.nombres||'',apellidos:p.apellidos||'',email:p.email||'',telefono:p.telefono||'',ciudad:p.ciudad||'',genero:p.genero||'',fecha_nacimiento:p.fecha_nacimiento||'',cargo:o.titulo||postulacion.oportunidad_id,experiencia:(experienciaMap[pid]||[]).join('\n'),educacion:(educacionMap[pid]||[]).join('\n')};}).sort((a,b)=>String(b.fecha_postulacion||'').localeCompare(String(a.fecha_postulacion||'')));
   const result={success:true,data}; cachePut_(key,result,CACHE_TTL_ADMIN); return json(result);
 }
 
 function actualizarPostulacion_(data) {
   const id=clean_(data.postulacion_id), estado=String(data.estado||'').trim().toUpperCase(), permitidos=['NUEVA','EN REVISION','PRESELECCIONADO','ENTREVISTA','FINALISTA','DESCARTADO','CONTRATADO'];
   if(!id||!permitidos.includes(estado))throw new Error('Datos de actualización inválidos'); const sheet=sheet_('postulaciones'), values=tableValues_('postulaciones'); const rowIndex=values.findIndex((row,index)=>index>0&&String(row[0])===id); if(rowIndex<1)throw new Error('Postulación no encontrada');
+  const puntaje = String(data.puntaje_evaluacion == null ? '' : data.puntaje_evaluacion).trim();
+  if (puntaje && (!Number.isFinite(Number(puntaje)) || Number(puntaje)<0 || Number(puntaje)>100)) throw new Error('El puntaje debe estar entre 0 y 100');
   sheet.getRange(rowIndex+1,4).setValue(estado); sheet.getRange(rowIndex+1,6).setValue(clean_(data.observaciones)); sheet.getRange(rowIndex+1,7).setValue(clean_(data.usuario_revision_id)); invalidateReadCaches_();
+  sheet.getRange(rowIndex+1,8,1,2).setValues([[puntaje ? Number(puntaje) : '',clean_(data.test_risc)]]);
   audit_(clean_(data.usuario_revision_id),'CAMBIAR_ESTADO','postulacion',id,estado+(clean_(data.observaciones)?' · '+clean_(data.observaciones):'')); return json({success:true,message:'Postulación actualizada'});
 }
 
@@ -153,5 +156,5 @@ function dashboardAdmin_() {
 }
 
 function audit_(usuarioId,accion,entidad,entidadId,detalle) {
-  try { sheet_('auditoria').appendRow([Utilities.getUuid(),clean_(usuarioId),clean_(accion),clean_(entidad),clean_(entidadId),clean_(detalle),new Date()]); } catch (_) {}
+  try { sheet_('auditoria').appendRow([Utilities.getUuid(),new Date(),clean_(usuarioId),clean_(accion),clean_(entidad),clean_(entidadId),clean_(detalle)]); } catch (_) {}
 }
