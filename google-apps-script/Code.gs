@@ -4,18 +4,13 @@ const CACHE_TTL_ADMIN = 45;
 let spreadsheetCache_ = null;
 
 function json(data) { return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON); }
-function adminRequest_(envelope) {
-  const secret = PropertiesService.getScriptProperties().getProperty('ADMIN_SESSION_SECRET');
-  const timestamp = Number(envelope.timestamp);
-  if (!secret || !Number.isFinite(timestamp) || Math.abs(Date.now() - timestamp) > 5 * 60 * 1000 ||
-      typeof envelope.payload !== 'string' || typeof envelope.signature !== 'string') return null;
-  const bytes = Utilities.computeHmacSha256Signature(String(timestamp) + '.' + envelope.payload, secret);
-  const expected = Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, '');
-  if (envelope.signature.length !== expected.length) return null;
-  let difference = 0;
-  for (let i = 0; i < expected.length; i++) difference |= expected.charCodeAt(i) ^ envelope.signature.charCodeAt(i);
-  if (difference !== 0) return null;
-  return JSON.parse(envelope.payload);
+function adminRequest_(token) {
+  if (typeof token !== 'string' || !/^[0-9a-f-]{36}$/i.test(token)) return null;
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get('admin_session_' + token);
+  if (!raw) return null;
+  cache.put('admin_session_' + token, raw, 21600);
+  return JSON.parse(raw);
 }
 
 function doGet(e) {
@@ -31,13 +26,15 @@ function doPost(e) {
   try {
     const request = JSON.parse((e.postData && e.postData.contents) || '{}');
     if (request.action === 'postular') return registrarPostulacion_(request);
-    const data = adminRequest_(request);
-    if (!data) return json({ success: false, message: 'No autorizado' });
+    if (request.action === 'login') return loginAdmin_(request);
+    const admin = adminRequest_(request.sessionToken);
+    if (!admin) return json({ success: false, message: 'No autorizado' });
+    const data = {...request, usuario_id: admin.usuario_id, usuario_revision_id: admin.usuario_id};
     switch (data.action) {
-      case 'login': return loginAdmin_(data);
       case 'admin_oportunidades': return listarOportunidadesAdmin_();
       case 'admin_dashboard': return dashboardAdmin_();
       case 'admin_postulaciones': return listarPostulacionesAdmin_();
+      case 'logout': CacheService.getScriptCache().remove('admin_session_' + request.sessionToken); return json({success:true});
       case 'guardar_oportunidad': return guardarOportunidad_(data);
       case 'eliminar_oportunidad': return darBajaOportunidad_(data);
       case 'actualizar_postulacion': return actualizarPostulacion_(data);
@@ -108,7 +105,9 @@ function loginAdmin_(data) {
     bool_(user.activo) && String(user.rol || '').trim().toUpperCase() === 'ADMIN'
   );
   if (!found) return json({success:false,message:'Usuario o contraseña incorrectos'});
-  return json({success:true,user:{usuario_id:found.usuario_id,usuario:found.usuario,nombres:found.nombres,apellidos:found.apellidos,rol:'ADMIN'}});
+  const sessionToken = Utilities.getUuid();
+  CacheService.getScriptCache().put('admin_session_' + sessionToken, JSON.stringify({usuario_id:found.usuario_id}), 21600);
+  return json({success:true,user:{usuario_id:found.usuario_id,usuario:found.usuario,nombres:found.nombres,apellidos:found.apellidos,rol:'ADMIN'},sessionToken});
 }
 
 function guardarOportunidad_(data) {

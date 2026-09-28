@@ -9,6 +9,7 @@ type AdminSession = {
   nombres: string;
   apellidos: string;
   rol: string;
+  scriptSessionToken: string;
   exp: number;
 };
 
@@ -22,8 +23,8 @@ function sign(payload: string) {
   return createHmac("sha256", secret()).update(payload).digest("base64url");
 }
 
-export function createAdminToken(user: Omit<AdminSession, "exp">) {
-  const session: AdminSession = { ...user, exp: Date.now() + 8 * 60 * 60 * 1000 };
+export function createAdminToken(user: Omit<AdminSession, "exp" | "scriptSessionToken">, scriptSessionToken: string) {
+  const session: AdminSession = { ...user, scriptSessionToken, exp: Date.now() + 6 * 60 * 60 * 1000 };
   const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
   return `${payload}.${sign(payload)}`;
 }
@@ -38,7 +39,8 @@ export function verifyAdminToken(token?: string | null): AdminSession | null {
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   try {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as AdminSession;
-    if (!session.exp || session.exp < Date.now() || session.rol !== "ADMIN") return null;
+    if (!session.exp || session.exp < Date.now() || session.rol !== "ADMIN" ||
+        !/^[0-9a-f-]{36}$/i.test(session.scriptSessionToken || "")) return null;
     return session;
   } catch {
     return null;

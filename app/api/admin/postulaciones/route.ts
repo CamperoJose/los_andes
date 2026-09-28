@@ -5,11 +5,11 @@ import { revalidateTag } from "next/cache";
 
 export async function GET() {
   try {
-    await requireAdmin();
-    const result = await callAppsScriptGet("admin_postulaciones");
+    const admin = await requireAdmin();
+    const result = await callAppsScriptGet("admin_postulaciones", { sessionToken: admin.scriptSessionToken });
     return NextResponse.json(result, { status: result.success ? 200 : 400, headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") return NextResponse.json({ success: false, message: "No autorizado" }, { status: 401 });
+    if (error instanceof Error && ["UNAUTHORIZED", "Sesión administrativa inválida"].includes(error.message)) return NextResponse.json({ success: false, message: "Sesión vencida. Vuelve a ingresar" }, { status: 401 });
     return NextResponse.json({ success: false, message: "No se pudieron cargar las postulaciones" }, { status: 502 });
   }
 }
@@ -18,11 +18,11 @@ export async function PATCH(request: NextRequest) {
   try {
     const admin = await requireAdmin();
     const body = await request.json();
-    const result = await callAppsScriptPost("actualizar_postulacion", { ...body, usuario_revision_id: admin.usuario_id });
+    const result = await callAppsScriptPost("actualizar_postulacion", { ...body, sessionToken: admin.scriptSessionToken });
     if (result.success) { revalidateTag("admin_postulaciones"); revalidateTag("admin_dashboard"); }
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") return NextResponse.json({ success: false, message: "No autorizado" }, { status: 401 });
+    if (error instanceof Error && ["UNAUTHORIZED", "Sesión administrativa inválida"].includes(error.message)) return NextResponse.json({ success: false, message: "Sesión vencida. Vuelve a ingresar" }, { status: 401 });
     return NextResponse.json({ success: false, message: "No se pudo actualizar la postulación" }, { status: 502 });
   }
 }

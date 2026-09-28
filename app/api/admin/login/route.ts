@@ -7,10 +7,10 @@ export async function POST(request: NextRequest) {
     const { usuario, contrasena } = await request.json();
     if (!usuario || !contrasena) return NextResponse.json({ success: false, message: "Completa usuario y contraseña" }, { status: 400 });
     const result = await callAppsScriptPost("login", { usuario, contrasena });
-    if (!result.success || !result.user) return NextResponse.json({ success: false, message: result.message || "Credenciales inválidas" }, { status: 401 });
+    if (!result.success || !result.user || !result.sessionToken) return NextResponse.json({ success: false, message: result.message || "Credenciales inválidas" }, { status: 401 });
     const response = NextResponse.json({ success: true, user: result.user });
-    response.cookies.set(ADMIN_COOKIE, createAdminToken(result.user), {
-      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 8 * 60 * 60,
+    response.cookies.set(ADMIN_COOKIE, createAdminToken(result.user, result.sessionToken), {
+      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 6 * 60 * 60,
     });
     return response;
   } catch (error) {
