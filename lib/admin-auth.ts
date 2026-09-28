@@ -13,7 +13,7 @@ type AdminSession = {
 };
 
 function secret() {
-  const value = process.env.ADMIN_SESSION_SECRET || process.env.APPS_SCRIPT_API_KEY;
+  const value = process.env.ADMIN_SESSION_SECRET;
   if (!value) throw new Error("ADMIN_SESSION_SECRET no configurado");
   return value;
 }

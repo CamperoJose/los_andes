@@ -4,16 +4,24 @@ const CACHE_TTL_ADMIN = 45;
 let spreadsheetCache_ = null;
 
 function json(data) { return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON); }
-function apiKeyValida_(apiKey) { return apiKey && apiKey === PropertiesService.getScriptProperties().getProperty('API_KEY'); }
+function adminRequest_(envelope) {
+  const secret = PropertiesService.getScriptProperties().getProperty('ADMIN_SESSION_SECRET');
+  const timestamp = Number(envelope.timestamp);
+  if (!secret || !Number.isFinite(timestamp) || Math.abs(Date.now() - timestamp) > 5 * 60 * 1000 ||
+      typeof envelope.payload !== 'string' || typeof envelope.signature !== 'string') return null;
+  const bytes = Utilities.computeHmacSha256Signature(String(timestamp) + '.' + envelope.payload, secret);
+  const expected = Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, '');
+  if (envelope.signature.length !== expected.length) return null;
+  let difference = 0;
+  for (let i = 0; i < expected.length; i++) difference |= expected.charCodeAt(i) ^ envelope.signature.charCodeAt(i);
+  if (difference !== 0) return null;
+  return JSON.parse(envelope.payload);
+}
 
 function doGet(e) {
   try {
-    if (!apiKeyValida_(e.parameter.apiKey)) return json({ success: false, message: 'No autorizado' });
     switch (e.parameter.action) {
       case 'oportunidades': return listarOportunidadesPublicas_();
-      case 'admin_oportunidades': return listarOportunidadesAdmin_();
-      case 'admin_dashboard': return dashboardAdmin_();
-      case 'admin_postulaciones': return listarPostulacionesAdmin_();
       default: return json({ success: false, message: 'Acción no válida' });
     }
   } catch (error) { return json({ success: false, message: error.message }); }
@@ -21,11 +29,15 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    const data = JSON.parse((e.postData && e.postData.contents) || '{}');
-    if (!apiKeyValida_(data.apiKey)) return json({ success: false, message: 'No autorizado' });
+    const request = JSON.parse((e.postData && e.postData.contents) || '{}');
+    if (request.action === 'postular') return registrarPostulacion_(request);
+    const data = adminRequest_(request);
+    if (!data) return json({ success: false, message: 'No autorizado' });
     switch (data.action) {
-      case 'postular': return registrarPostulacion_(data);
       case 'login': return loginAdmin_(data);
+      case 'admin_oportunidades': return listarOportunidadesAdmin_();
+      case 'admin_dashboard': return dashboardAdmin_();
+      case 'admin_postulaciones': return listarPostulacionesAdmin_();
       case 'guardar_oportunidad': return guardarOportunidad_(data);
       case 'eliminar_oportunidad': return darBajaOportunidad_(data);
       case 'actualizar_postulacion': return actualizarPostulacion_(data);
