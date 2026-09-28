@@ -90,9 +90,13 @@ function listarOportunidadesAdmin_() {
 function loginAdmin_(data) {
   const usuario = clean_(data.usuario).toLowerCase(); const contrasena = String(data.contrasena || '');
   if (!usuario || !contrasena) return json({ success:false, message:'Completa usuario y contraseña' });
-  const props = PropertiesService.getScriptProperties();
-  if (usuario !== String(props.getProperty('ADMIN_USER') || '').toLowerCase() || contrasena !== props.getProperty('ADMIN_PASSWORD')) return json({success:false,message:'Usuario o contraseña incorrectos'});
-  return json({success:true,user:{usuario_id:'ADMIN',usuario,nombres:'Equipo',apellidos:'RR. HH.',rol:'ADMIN'}});
+  const found = rowsAsObjects_('usuarios').find(user =>
+    String(user.usuario || '').trim().toLowerCase() === usuario &&
+    String(user.contrasena || '') === contrasena &&
+    bool_(user.activo) && String(user.rol || '').trim().toUpperCase() === 'ADMIN'
+  );
+  if (!found) return json({success:false,message:'Usuario o contraseña incorrectos'});
+  return json({success:true,user:{usuario_id:found.usuario_id,usuario:found.usuario,nombres:found.nombres,apellidos:found.apellidos,rol:'ADMIN'}});
 }
 
 function guardarOportunidad_(data) {

@@ -11,14 +11,14 @@ Aplicación Next.js para convocatoria, registro de postulaciones y análisis de 
 
 ## Fuente de datos
 
-La hoja [bdd_los_andes](https://docs.google.com/spreadsheets/d/1QrrRaTMapWgsK_0LbaSdAr79BfhN9DD7ot5mi7gHhJ4/edit) contiene `oportunidades`, `postulantes`, `postulaciones`, `experiencias`, `educaciones`, `auditoria` y `usuarios`. Se trasladaron los registros históricos de la hoja anterior; las cuatro oportunidades anteriores quedaron cerradas y se añadieron C1, C2, C3, C4, C6, C7, C8 y C9 como abiertas. No se trasladó la contraseña de prueba `admin/admin`.
+La hoja [bdd_los_andes](https://docs.google.com/spreadsheets/d/1QrrRaTMapWgsK_0LbaSdAr79BfhN9DD7ot5mi7gHhJ4/edit) contiene `oportunidades`, `postulantes`, `postulaciones`, `experiencias`, `educaciones`, `auditoria` y `usuarios`. Se trasladaron los registros históricos de la hoja anterior; las cuatro oportunidades anteriores quedaron cerradas y se añadieron C1, C2, C3, C4, C6, C7, C8 y C9 como abiertas. La pestaña `usuarios` contiene la cuenta de demostración `admin/admin` solicitada para el proyecto académico. Sustitúyela antes de usar datos reales.
 
 Los datos históricos no contienen género, fecha de nacimiento ni evaluaciones. El dashboard muestra explícitamente la falta de esos campos, sin fabricar estadísticas. El mapa es esquemático y solo ubica ciudades bolivianas reconocidas por nombre; también enumera otras residencias.
 
 ## Configurar Apps Script
 
 1. Abre la hoja nueva y usa **Extensiones → Apps Script**. Copia el contenido completo de `google-apps-script/Code.gs` en `Code.gs` y guarda. El ID de la hoja nueva ya está configurado en el archivo.
-2. En **Configuración del proyecto**, fija la zona horaria en `America/La_Paz`. En **Propiedades de secuencia de comandos**, agrega `API_KEY` (valor aleatorio largo), `ADMIN_USER` y `ADMIN_PASSWORD` (contraseña nueva y fuerte). No uses las credenciales de prueba de la hoja antigua. Restringe el acceso de edición al proyecto Apps Script y a la hoja.
+2. En **Configuración del proyecto**, fija la zona horaria en `America/La_Paz`. En **Propiedades de secuencia de comandos**, agrega `API_KEY` (valor aleatorio largo). El usuario y la contraseña de administración se leen de la pestaña `usuarios`, no de propiedades. Restringe el acceso de edición al proyecto Apps Script y a la hoja.
 3. En **Implementar → Nueva implementación → Aplicación web**, ejecuta como **tu cuenta** y habilita acceso a **Cualquier usuario** para que el servidor de Vercel pueda llamar al endpoint. El API key solo se usa desde el servidor. Autoriza acceso a Sheets. Copia la URL `/exec`.
 4. Cuando cambies el código, usa **Implementar → Gestionar implementaciones → Editar → Nueva versión**. Prueba una postulación y una sesión administrativa.
 
