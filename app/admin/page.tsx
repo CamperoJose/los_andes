@@ -131,7 +131,6 @@ export default function AdminPage() {
           <TabButton active={tab === "postulaciones"} onClick={() => setTab("postulaciones")} icon={<UsersThree size={18} />} label="Postulaciones" />
         </nav>
 
-        {applications.some(a => a.observaciones?.startsWith("DATOS DE DEMOSTRACIÓN")) && <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[#d8c79f] bg-[#fff5d8] px-5 py-3 text-sm text-[#67502b]"><span className="font-bold">Modo demostración</span><span>Este panel incluye perfiles ficticios para explorar las métricas. No representan personas reales.</span></div>}
         {message && <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{message}</div>}
 
         {tab === "dashboard" && <>{dashboard ? <Analytics applications={applications} jobs={jobs} /> : <AdminLoading compact />}</>}
