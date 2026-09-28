@@ -6,6 +6,7 @@ export function integrationErrorMessage(error: unknown) {
   if (error.message === "URL de Apps Script inválida") return "APPS_SCRIPT_URL debe ser la URL publicada que termina en /exec";
   if (error.message === "Apps Script requiere acceso anónimo") return "Apps Script exige iniciar sesión en Google. La aplicación web debe permitir acceso anónimo";
   if (error.message === "Sesión administrativa inválida") return "La sesión administrativa venció. Vuelve a ingresar";
+  if (error.message === "Apps Script todavía requiere API_KEY") return "Apps Script sigue ejecutando el código anterior. Publica la nueva versión de Code.gs";
   if (error.message.startsWith("Apps Script respondió ")) return error.message;
   return "Apps Script no respondió correctamente. Revisa sus ejecuciones y la implementación publicada";
 }
@@ -17,12 +18,12 @@ function settings() {
   return url;
 }
 
-async function parseResponse(response: Response) {
+async function parseResponse(response: Response, protectedAction = false) {
   if (response.status === 401 || response.status === 403) throw new Error("Apps Script requiere acceso anónimo");
   if (!response.ok) throw new Error(`Apps Script respondió ${response.status}`);
   if (!(response.headers.get("content-type") || "").includes("application/json")) throw new Error("Apps Script requiere acceso anónimo");
   const data = await response.json();
-  if (!data.success && data.message === "No autorizado") throw new Error("Sesión administrativa inválida");
+  if (!data.success && data.message === "No autorizado") throw new Error(protectedAction ? "Sesión administrativa inválida" : "Apps Script todavía requiere API_KEY");
   return data;
 }
 
@@ -39,7 +40,7 @@ async function requestPost(action: string, body: Record<string, unknown> = {}) {
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ ...body, action }),
   });
-  return parseResponse(response);
+  return parseResponse(response, action !== "postular" && action !== "login");
 }
 
 export async function callAppsScriptGet(action: string, params: Record<string, string> = {}) {
