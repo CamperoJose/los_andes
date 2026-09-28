@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/admin-auth";
-import { callAppsScriptGet, callAppsScriptPost } from "@/lib/apps-script";
+import { callAppsScriptAdmin, callAppsScriptPost } from "@/lib/apps-script";
 
 export async function GET() {
   try {
     const admin = await requireAdmin();
-    const result = await callAppsScriptGet("admin_oportunidades", { sessionToken: admin.scriptSessionToken });
+    const result = await callAppsScriptAdmin("admin_oportunidades", { sessionToken: admin.scriptSessionToken });
     return NextResponse.json(result, { status: result.success ? 200 : 400, headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     if (error instanceof Error && ["UNAUTHORIZED", "Sesión administrativa inválida"].includes(error.message)) return NextResponse.json({ success: false, message: "Sesión vencida. Vuelve a ingresar" }, { status: 401 });

@@ -28,10 +28,9 @@ En **Project Settings → Environment Variables**, configura (Production y Previ
 
 ```env
 APPS_SCRIPT_URL=https://script.google.com/macros/s/TU_DEPLOYMENT/exec
-ADMIN_SESSION_SECRET=SECRETO_LARGO_SOLO_EN_VERCEL
 ```
 
-No uses el prefijo `NEXT_PUBLIC_` para estos valores. Elimina `APPS_SCRIPT_API_KEY` de Vercel cuando hayas publicado el código nuevo; ya no se lee. Despliega `main` y prueba `/home`, `/postulate`, el envío de una postulación y `/admin`. No hace falta una base Redis adicional: las lecturas usan **Vercel Data Cache**, compartida entre instancias, con revalidación a los 120 segundos para vacantes y 60 segundos para datos administrativos. La respuesta anterior se muestra mientras Vercel actualiza la caché en segundo plano. La primera lectura en una caché vacía sí espera a Apps Script. Las mutaciones invalidan las etiquetas de caché relevantes. El servidor responde a clientes administrativos con `Cache-Control: no-store`; sus datos no deben almacenarse en cachés públicas del navegador/CDN.
+No uses el prefijo `NEXT_PUBLIC_` para estos valores. `APPS_SCRIPT_API_KEY` y `ADMIN_SESSION_SECRET` ya no se leen en Vercel. Despliega `main` y prueba `/home`, `/postulate`, el envío de una postulación y `/admin`. Las vacantes públicas usan **Vercel Data Cache**, compartida entre instancias, con revalidación a los 120 segundos. Las lecturas administrativas consultan Apps Script en cada solicitud para validar el token de sesión; Apps Script mantiene su propia caché de datos. La primera lectura pública en una caché vacía sí espera a Apps Script. Las mutaciones invalidan la caché pública. El servidor responde a clientes administrativos con `Cache-Control: no-store`; sus datos no deben almacenarse en cachés públicas del navegador/CDN.
 
 ## Desarrollo
 

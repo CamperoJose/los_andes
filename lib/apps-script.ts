@@ -55,8 +55,6 @@ export async function callAppsScriptGet(action: string, params: Record<string, s
         redirect: "follow", cache: "no-store", signal: AbortSignal.timeout(30000),
       });
       data = await parseResponse(response);
-    } else if (adminActions.has(action) && action.startsWith("admin_")) {
-      data = await requestPost(action, params);
     } else {
       throw new Error("Acción no válida");
     }
@@ -66,6 +64,15 @@ export async function callAppsScriptGet(action: string, params: Record<string, s
     revalidate: action === "oportunidades" ? 120 : 60,
     tags: [action],
   })();
+}
+
+// Admin responses contain private data and must be checked against the live
+// Apps Script session on every request (including after logout/revocation).
+export async function callAppsScriptAdmin(action: string, params: Record<string, string>) {
+  if (!adminActions.has(action) || !action.startsWith("admin_")) throw new Error("Acción no válida");
+  const data = await requestPost(action, params);
+  if (!data.success) throw new Error(data.message || "Apps Script devolvió un error");
+  return data;
 }
 
 export async function callAppsScriptPost(action: string, body: Record<string, unknown> = {}) {

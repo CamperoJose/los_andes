@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
     });
     return response;
   } catch (error) {
-    if (error instanceof Error && error.message === "ADMIN_SESSION_SECRET no configurado") return NextResponse.json({success:false,message:"Falta ADMIN_SESSION_SECRET en Vercel"},{status:500});
     return NextResponse.json({ success: false, message: integrationErrorMessage(error) }, { status: 502 });
   }
 }
