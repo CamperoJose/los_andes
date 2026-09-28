@@ -19,7 +19,7 @@ Los datos históricos no contienen género, fecha de nacimiento ni evaluaciones.
 
 1. Abre la hoja nueva y usa **Extensiones → Apps Script**. Copia el contenido completo de `google-apps-script/Code.gs` en `Code.gs` y guarda. El ID de la hoja nueva ya está configurado en el archivo.
 2. En **Configuración del proyecto**, fija la zona horaria en `America/La_Paz`. En **Propiedades de secuencia de comandos**, agrega `API_KEY` (valor aleatorio largo). El usuario y la contraseña de administración se leen de la pestaña `usuarios`, no de propiedades. Restringe el acceso de edición al proyecto Apps Script y a la hoja.
-3. En **Implementar → Nueva implementación → Aplicación web**, ejecuta como **tu cuenta** y habilita acceso a **Cualquier usuario** para que el servidor de Vercel pueda llamar al endpoint. El API key solo se usa desde el servidor. Autoriza acceso a Sheets. Copia la URL `/exec`.
+3. En **Implementar → Nueva implementación → Aplicación web**, ejecuta como **tu cuenta** y elige el acceso que permita llamar **sin iniciar sesión de Google** (`ANYONE_ANONYMOUS`, habitualmente «Cualquier persona» o «Cualquiera, incluso anónimo»). La opción «Cualquier usuario» puede exigir una cuenta de Google y bloquear a Vercel. El API key solo se usa desde el servidor. Autoriza acceso a Sheets. Copia la URL `/exec`.
 4. Cuando cambies el código, usa **Implementar → Gestionar implementaciones → Editar → Nueva versión**. Prueba una postulación y una sesión administrativa.
 
 ## Vercel

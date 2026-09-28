@@ -1,9 +1,34 @@
 import { unstable_cache } from "next/cache";
 
-export async function callAppsScriptGet(action: string, params: Record<string, string> = {}) {
+export function integrationErrorMessage(error: unknown) {
+  if (!(error instanceof Error)) return "No se pudo conectar con Apps Script";
+  if (error.message === "Integración no configurada") return "Faltan APPS_SCRIPT_URL o APPS_SCRIPT_API_KEY en Vercel";
+  if (error.message === "URL de Apps Script inválida") return "APPS_SCRIPT_URL debe ser la URL publicada que termina en /exec";
+  if (error.message === "Apps Script requiere acceso anónimo") return "Apps Script exige iniciar sesión en Google. La aplicación web debe permitir acceso anónimo";
+  if (error.message === "API_KEY no coincide") return "APPS_SCRIPT_API_KEY no coincide con API_KEY de Apps Script";
+  if (error.message.startsWith("Apps Script respondió ")) return error.message;
+  return "Apps Script no respondió correctamente. Revisa sus ejecuciones y la implementación publicada";
+}
+
+function settings() {
   const url = process.env.APPS_SCRIPT_URL;
   const apiKey = process.env.APPS_SCRIPT_API_KEY;
   if (!url || !apiKey) throw new Error("Integración no configurada");
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(url)) throw new Error("URL de Apps Script inválida");
+  return { url, apiKey };
+}
+
+async function parseResponse(response: Response) {
+  if (response.status === 401 || response.status === 403) throw new Error("Apps Script requiere acceso anónimo");
+  if (!response.ok) throw new Error(`Apps Script respondió ${response.status}`);
+  if (!(response.headers.get("content-type") || "").includes("application/json")) throw new Error("Apps Script requiere acceso anónimo");
+  const data = await response.json();
+  if (!data.success && data.message === "No autorizado") throw new Error("API_KEY no coincide");
+  return data;
+}
+
+export async function callAppsScriptGet(action: string, params: Record<string, string> = {}) {
+  const { url, apiKey } = settings();
   // Cache only validated results. Apps Script reports application errors with
   // HTTP 200; caching the raw fetch would replace the last good data with them.
   return unstable_cache(async () => {
@@ -11,8 +36,7 @@ export async function callAppsScriptGet(action: string, params: Record<string, s
     const response = await fetch(`${url}?${query}`, {
       redirect: "follow", cache: "no-store", signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) throw new Error(`Apps Script respondió ${response.status}`);
-    const data = await response.json();
+    const data = await parseResponse(response);
     if (!data.success) throw new Error(data.message || "Apps Script devolvió un error");
     return data;
   }, ["los-andes", action, JSON.stringify(params), url], {
@@ -22,9 +46,7 @@ export async function callAppsScriptGet(action: string, params: Record<string, s
 }
 
 export async function callAppsScriptPost(action: string, body: Record<string, unknown> = {}) {
-  const url = process.env.APPS_SCRIPT_URL;
-  const apiKey = process.env.APPS_SCRIPT_API_KEY;
-  if (!url || !apiKey) throw new Error("Integración no configurada");
+  const { url, apiKey } = settings();
   const response = await fetch(url, {
     method: "POST",
     redirect: "follow",
@@ -33,6 +55,5 @@ export async function callAppsScriptPost(action: string, body: Record<string, un
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action, apiKey, ...body }),
   });
-  if (!response.ok) throw new Error(`Apps Script respondió ${response.status}`);
-  return response.json();
+  return parseResponse(response);
 }

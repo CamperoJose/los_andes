@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE, createAdminToken } from "@/lib/admin-auth";
-import { callAppsScriptPost } from "@/lib/apps-script";
+import { callAppsScriptPost, integrationErrorMessage } from "@/lib/apps-script";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 8 * 60 * 60,
     });
     return response;
-  } catch {
-    return NextResponse.json({ success: false, message: "No se pudo iniciar sesión" }, { status: 502 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "ADMIN_SESSION_SECRET no configurado") return NextResponse.json({success:false,message:"Falta ADMIN_SESSION_SECRET en Vercel"},{status:500});
+    return NextResponse.json({ success: false, message: integrationErrorMessage(error) }, { status: 502 });
   }
 }

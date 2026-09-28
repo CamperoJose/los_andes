@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { callAppsScriptGet } from "@/lib/apps-script";
+import { callAppsScriptGet, integrationErrorMessage } from "@/lib/apps-script";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +12,9 @@ export async function GET() {
         "Cache-Control": "no-store",
       },
     });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, message: "No se pudieron consultar las oportunidades" },
+      { success: false, message: integrationErrorMessage(error) },
       { status: 502 },
     );
   }
