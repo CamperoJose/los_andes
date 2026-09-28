@@ -72,3 +72,29 @@ button, a {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Los Andes — warm editorial identity */
+:root { --ink:#173c34; --ink-soft:#5c7069; --accent:#e5ae70; --accent-dark:#a76636; --paper:#f6f2e9; }
+.site-shell { background:var(--paper); color:var(--ink); }
+.site-noise { position:absolute; inset:0; height:900px; pointer-events:none; opacity:.22; background-image:radial-gradient(#678272 0.6px,transparent 0.6px); background-size:8px 8px; mask-image:linear-gradient(to bottom,black,transparent); }
+.site-serif,.site-display { font-family:Georgia,"Times New Roman",serif; letter-spacing:-.055em; font-weight:400; }
+.site-serif em,.site-display em { font-weight:400; font-style:italic; }
+.site-brand { display:inline-flex; align-items:center; gap:.75rem; color:var(--ink); }
+.site-brand-mark { font-family:Georgia,serif; font-size:2.2rem; font-weight:700; letter-spacing:-.1em; line-height:1; }
+.site-brand-mark span { color:var(--accent-dark); }
+.site-nav-cta { display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--ink); border-radius:100px; padding:.75rem 1.1rem; transition:background .2s,color .2s; }
+.site-nav-cta:hover { background:var(--ink); color:white; }
+.site-eyebrow { display:flex; align-items:center; gap:.65rem; color:var(--accent-dark); font-size:.7rem; font-weight:800; letter-spacing:.19em; text-transform:uppercase; }
+.site-dot { width:9px; height:9px; border-radius:50%; background:var(--accent-dark); box-shadow:0 0 0 5px #a7663622; }
+.site-button { display:inline-flex; align-items:center; justify-content:center; gap:1.6rem; border-radius:100px; background:var(--ink); color:white; padding:1rem 1.5rem; font-size:.85rem; font-weight:700; transition:transform .2s,box-shadow .2s; }
+.site-button:hover { transform:translateY(-3px); box-shadow:0 12px 25px #173c342a; }
+.site-portrait { background: radial-gradient(circle at 55% 28%,#e6c49a 0 11%,transparent 11.5%), radial-gradient(ellipse at 55% 28%,#283b32 0 16%,transparent 16.5%), radial-gradient(ellipse at 58% 83%,#f0b079 0 33%,transparent 33.5%), linear-gradient(145deg,#c3d2b6,#628476 60%,#365e50); }
+.site-card { border:1px solid #d8dfd1; background:#fffefa; border-radius:1.5rem; box-shadow:0 16px 40px #173c340a; }
+.site-card:hover { border-color:#9aad9d; box-shadow:0 24px 45px #173c3418; }
+.site-input { border:1px solid #cad8cd; border-radius:.8rem; background:#fffefa; color:var(--ink); outline:0; }
+.site-input:focus { border-color:#4d7b62; box-shadow:0 0 0 4px #4d7b6224; }
+.admin-shell { background:#edf0e7; }
+.admin-shell :is(input,select,textarea):focus { outline:none; border-color:#477d64; box-shadow:0 0 0 4px #477d6420; }
+.admin-shell table tbody tr:hover { background:#f2f3e9; }
+.admin-shell table th { font-size:.7rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.site-shell :is(input,select,textarea):focus { outline:none; border-color:#477d64; box-shadow:0 0 0 4px #477d6420; }

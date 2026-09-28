@@ -102,12 +102,12 @@ export default function AdminPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+    <main className="admin-shell min-h-screen text-[var(--ink)]">
+      <header className="sticky top-0 z-30 border-b border-[#173c34]/10 bg-[#f6f2e9]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#101a34] text-white"><Briefcase size={20} weight="duotone" /></div>
-            <div><p className="text-sm font-semibold">Talent Control</p><p className="text-xs text-slate-500">Administración de postulantes</p></div>
+            <div className="grid h-11 w-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--accent)]"><Briefcase size={20} weight="duotone" /></div>
+            <div><p className="font-bold tracking-tight">LOS ANDES / TALENTO</p><p className="text-xs text-[var(--ink-soft)]">Centro de selección</p></div>
           </div>
           <div className="flex items-center gap-3">
             <a href="/" className="hidden rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium hover:bg-slate-50 sm:block">Ver portal público</a>
@@ -118,19 +118,20 @@ export default function AdminPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-5 py-7 lg:px-8">
-        <section className="rounded-3xl bg-[#101a34] p-6 text-white shadow-xl shadow-slate-900/10 lg:p-8">
+        <section className="relative overflow-hidden rounded-[2rem] bg-[var(--ink)] p-7 text-[#f6f2e9] shadow-xl shadow-[#173c34]/10 lg:p-10">
           <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-            <div><p className="text-sm font-medium text-blue-200">Centro de control</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">Hola, {user.nombres}. Tu operación de talento en un vistazo.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Publica cargos, controla su visibilidad y acompaña cada postulación sin salir del portal.</p></div>
+            <div><p className="text-xs font-bold uppercase tracking-[.22em] text-[var(--accent)]">Centro de control / RR. HH.</p><h1 className="site-serif mt-4 text-4xl leading-tight sm:text-5xl">El talento tiene<br/><em>su lugar aquí.</em></h1><p className="mt-3 text-sm text-[var(--accent)]">Hola, {user.nombres}.</p><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Publica cargos, controla su visibilidad y acompaña cada postulación sin salir del portal.</p></div>
             <button onClick={() => void loadAll()} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold ring-1 ring-white/15 hover:bg-white/15 disabled:opacity-50"><ArrowClockwise size={18} className={loading ? "animate-spin" : ""} />Actualizar datos</button>
           </div>
         </section>
 
-        <nav className="mt-6 flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+        <nav className="mt-8 flex gap-2 overflow-x-auto rounded-full border border-[#173c34]/10 bg-white/70 p-2 shadow-sm">
           <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<ChartBar size={18} />} label="Dashboard" />
           <TabButton active={tab === "cargos"} onClick={() => setTab("cargos")} icon={<Briefcase size={18} />} label="Cargos" />
           <TabButton active={tab === "postulaciones"} onClick={() => setTab("postulaciones")} icon={<UsersThree size={18} />} label="Postulaciones" />
         </nav>
 
+        {applications.some(a => a.observaciones?.startsWith("DATOS DE DEMOSTRACIÓN")) && <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[#d8c79f] bg-[#fff5d8] px-5 py-3 text-sm text-[#67502b]"><span className="font-bold">Modo demostración</span><span>Este panel incluye perfiles ficticios para explorar las métricas. No representan personas reales.</span></div>}
         {message && <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{message}</div>}
 
         {tab === "dashboard" && <>{dashboard ? <Analytics applications={applications} jobs={jobs} /> : <AdminLoading compact />}</>}
@@ -164,12 +165,12 @@ function Login({ onSuccess }: { onSuccess: (user: AdminUser) => void }) {
   }
 
   return (
-    <main className="min-h-screen bg-[#0c1429] text-white">
-      <div className="hero-grid min-h-screen">
+    <main className="min-h-screen bg-[var(--ink)] text-white">
+      <div className="min-h-screen">
         <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-6 py-12 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
-          <section><div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-sm text-blue-100"><ChartBar size={16} />Talent Control</div><h1 className="mt-6 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">Decisiones de contratación con toda la información en un solo lugar.</h1><p className="mt-5 max-w-xl leading-7 text-slate-300">Gestiona oportunidades, visibilidad pública y el avance de cada postulante desde un panel diseñado para operación diaria.</p><a href="/" className="mt-7 inline-flex text-sm font-semibold text-blue-200 hover:text-white">← Volver al portal público</a></section>
-          <section className="rounded-3xl border border-white/10 bg-white p-7 text-slate-900 shadow-2xl sm:p-9">
-            <div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-700"><UserCircle size={24} weight="duotone" /></div><div><p className="text-sm text-slate-500">Acceso restringido</p><h2 className="text-xl font-semibold">Ingresar como administrador</h2></div></div>
+          <section><div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-sm text-blue-100"><ChartBar size={16} />Talent Control</div><h1 className="site-serif mt-6 max-w-2xl text-5xl leading-[1.05] sm:text-7xl">El talento,<br/><em>a primera vista.</em></h1><p className="mt-5 max-w-xl leading-7 text-slate-300">Gestiona oportunidades, visibilidad pública y el avance de cada postulante desde un panel diseñado para operación diaria.</p><a href="/" className="mt-7 inline-flex text-sm font-semibold text-blue-200 hover:text-white">← Volver al portal público</a></section>
+          <section className="rounded-[2rem] border border-white/10 bg-[var(--paper)] p-7 text-[var(--ink)] shadow-2xl sm:p-10">
+            <div className="flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-full bg-[#e4e9dd] text-[var(--ink)]"><UserCircle size={24} weight="duotone" /></div><div><p className="text-sm text-slate-500">Acceso restringido</p><h2 className="text-xl font-semibold">Ingresar como administrador</h2></div></div>
             <form onSubmit={submit} className="mt-7 space-y-5">
               <AdminField label="Usuario" value={usuario} onChange={setUsuario} autoComplete="username" />
               <div><label className="mb-2 block text-sm font-medium">Contraseña</label><div className="relative"><input type={show ? "text" : "password"} value={contrasena} onChange={e => setContrasena(e.target.value)} autoComplete="current-password" className="w-full rounded-xl border border-slate-300 px-3.5 py-3 pr-11 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" /><button type="button" onClick={() => setShow(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 hover:bg-slate-100">{show ? <EyeSlash size={18}/> : <Eye size={18}/>}</button></div></div>
@@ -222,7 +223,7 @@ function ApplicationDrawer({application,onClose,onSaved}:{application:Applicatio
   return <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 backdrop-blur-sm"><aside className="h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Perfil del candidato</p><h3 className="mt-1 text-2xl font-semibold">{application.nombres} {application.apellidos}</h3><p className="mt-1 text-sm text-slate-500">{application.cargo}</p></div><button onClick={onClose} className="rounded-xl p-2 hover:bg-slate-100"><X size={21}/></button></div><div className="mt-7 grid gap-3 sm:grid-cols-2"><Info label="Email" value={application.email}/><Info label="Teléfono" value={application.telefono||"—"}/><Info label="Ciudad" value={application.ciudad||"—"}/><Info label="Género" value={application.genero||"Sin dato"}/><Info label="Nacimiento" value={application.fecha_nacimiento||"Sin dato"}/><Info label="Fecha" value={String(application.fecha_postulacion||"").replace("T"," ").slice(0,16)}/></div><div className="mt-6 space-y-5"><ReadBox title="Experiencia" text={application.experiencia||"Sin detalle"}/><ReadBox title="Educación" text={application.educacion||"Sin detalle"}/><div><label className="mb-2 block text-sm font-semibold">Estado del proceso</label><select value={estado} onChange={e=>setEstado(e.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm">{states.map(s=><option key={s}>{s}</option>)}</select></div><div className="grid gap-3 sm:grid-cols-2"><AdminField label="Puntaje (0 a 100)" type="number" value={score} onChange={setScore}/><AdminField label="Resultado test RISC" value={risc} onChange={setRisc}/></div><TextArea label="Observaciones internas" value={obs} onChange={setObs} rows={4}/><button onClick={()=>void save()} disabled={saving} className="w-full rounded-xl bg-[#101a34] px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-50">{saving?"Guardando...":"Guardar seguimiento"}</button></div></aside></div>;
 }
 
-function TabButton({active,onClick,icon,label}:{active:boolean;onClick:()=>void;icon:ReactNode;label:string}){return <button onClick={onClick} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition ${active?"bg-[#101a34] text-white shadow":"text-slate-600 hover:bg-slate-50"}`}>{icon}{label}</button>}
+function TabButton({active,onClick,icon,label}:{active:boolean;onClick:()=>void;icon:ReactNode;label:string}){return <button onClick={onClick} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition ${active?"bg-[var(--ink)] text-white shadow":"text-[var(--ink-soft)] hover:bg-[#e4e9dd]"}`}>{icon}{label}</button>}
 function StatusPill({value}:{value:string}){const active=["ABIERTA","CONTRATADO","FINALISTA"].includes(String(value).toUpperCase());return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${active?"bg-emerald-50 text-emerald-700":"bg-slate-100 text-slate-600"}`}>{value}</span>}
 function AdminField({label,value,onChange,type="text",autoComplete}:{label:string;value:string;onChange:(v:string)=>void;type?:string;autoComplete?:string}){return <div><label className="mb-2 block text-sm font-medium">{label}</label><input type={type} value={value} onChange={e=>onChange(e.target.value)} autoComplete={autoComplete} className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"/></div>}
 function TextArea({label,value,onChange,rows}:{label:string;value:string;onChange:(v:string)=>void;rows:number}){return <div><label className="mb-2 block text-sm font-medium">{label}</label><textarea rows={rows} value={value} onChange={e=>onChange(e.target.value)} className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"/></div>}
