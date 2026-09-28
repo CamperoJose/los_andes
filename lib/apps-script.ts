@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 
 export function integrationErrorMessage(error: unknown) {
   if (!(error instanceof Error)) return "No se pudo conectar con Apps Script";
-  if (error.message === "Integración no configurada") return "Faltan APPS_SCRIPT_URL o APPS_SCRIPT_API_KEY en Vercel";
+  if (error.message.startsWith("Variables faltantes: ")) return error.message;
   if (error.message === "URL de Apps Script inválida") return "APPS_SCRIPT_URL debe ser la URL publicada que termina en /exec";
   if (error.message === "Apps Script requiere acceso anónimo") return "Apps Script exige iniciar sesión en Google. La aplicación web debe permitir acceso anónimo";
   if (error.message === "API_KEY no coincide") return "APPS_SCRIPT_API_KEY no coincide con API_KEY de Apps Script";
@@ -13,9 +13,10 @@ export function integrationErrorMessage(error: unknown) {
 function settings() {
   const url = process.env.APPS_SCRIPT_URL;
   const apiKey = process.env.APPS_SCRIPT_API_KEY;
-  if (!url || !apiKey) throw new Error("Integración no configurada");
-  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(url)) throw new Error("URL de Apps Script inválida");
-  return { url, apiKey };
+  const missing = [!url?.trim() && "APPS_SCRIPT_URL", !apiKey?.trim() && "APPS_SCRIPT_API_KEY"].filter(Boolean);
+  if (missing.length) throw new Error(`Variables faltantes: ${missing.join(", ")}`);
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(url!)) throw new Error("URL de Apps Script inválida");
+  return { url: url!, apiKey: apiKey! };
 }
 
 async function parseResponse(response: Response) {
