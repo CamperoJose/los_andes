@@ -35,7 +35,7 @@ export async function callAppsScriptGet(action: string, params: Record<string, s
   return unstable_cache(async () => {
     const query = new URLSearchParams({ action, apiKey, ...params });
     const response = await fetch(`${url}?${query}`, {
-      redirect: "follow", cache: "no-store", signal: AbortSignal.timeout(10000),
+      redirect: "follow", cache: "no-store", signal: AbortSignal.timeout(30000),
     });
     const data = await parseResponse(response);
     if (!data.success) throw new Error(data.message || "Apps Script devolvió un error");
@@ -52,7 +52,7 @@ export async function callAppsScriptPost(action: string, body: Record<string, un
     method: "POST",
     redirect: "follow",
     cache: "no-store",
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(30000),
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action, apiKey, ...body }),
   });
