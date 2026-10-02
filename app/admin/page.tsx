@@ -47,7 +47,7 @@ const states = ["NUEVA", "EN REVISION", "PRESELECCIONADO", "ENTREVISTA", "FINALI
 export default function AdminPage() {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [checking, setChecking] = useState(true);
-  const [tab, setTab] = useState<"dashboard" | "cargos" | "postulaciones">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "bi" | "cargos" | "postulaciones">("dashboard");
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -127,6 +127,7 @@ export default function AdminPage() {
 
         <nav className="mt-8 flex gap-2 overflow-x-auto rounded-full border border-[#173c34]/10 bg-white/70 p-2 shadow-sm">
           <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<ChartBar size={18} />} label="Dashboard" />
+          <TabButton active={tab === "bi"} onClick={() => setTab("bi")} icon={<ChartBar size={18} />} label="Power BI" />
           <TabButton active={tab === "cargos"} onClick={() => setTab("cargos")} icon={<Briefcase size={18} />} label="Cargos" />
           <TabButton active={tab === "postulaciones"} onClick={() => setTab("postulaciones")} icon={<UsersThree size={18} />} label="Postulaciones" />
         </nav>
@@ -134,6 +135,18 @@ export default function AdminPage() {
         {message && <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{message}</div>}
 
         {tab === "dashboard" && <>{dashboard ? <Analytics applications={applications} jobs={jobs} /> : <AdminLoading compact />}</>}
+        {tab === "bi" && <section className="mt-6 overflow-hidden rounded-3xl border border-[#d8dfd1] bg-white shadow-sm">
+          <div className="border-b border-[#d8dfd1] px-6 py-5"><p className="text-xs font-bold uppercase tracking-widest text-[var(--accent-dark)]">Inteligencia de negocio</p><h2 className="site-serif mt-1 text-3xl">Radar de talento</h2></div>
+          <iframe
+            title="DASHBOARD FINAL - Radar de talento"
+            src="https://app.powerbi.com/view?r=eyJrIjoiNDRhNTA2NTQtZTg0OC00YzhlLThkOTgtNTQyZjQ3NmUxYTg1IiwidCI6ImNjMjg2MzNmLTEyYjgtNDZjYi1iYzE1LTk1MWRhZTIzOWI0ZCIsImMiOjR9"
+            width="800"
+            height="486"
+            className="block h-[65vh] min-h-[486px] w-full border-0 lg:h-[75vh]"
+            loading="lazy"
+            allowFullScreen
+          />
+        </section>}
         {tab === "cargos" && <JobsView jobs={jobs} onEdit={setEditingJob} onNew={() => setEditingJob({ ...emptyJob, orden: jobs.length + 1 })} onRefresh={loadAll} />}
         {tab === "postulaciones" && <ApplicationsView applications={filteredApplications} search={search} setSearch={setSearch} onRefresh={loadAll} />}
 
